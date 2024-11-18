@@ -8,7 +8,7 @@ import numpy as np
 # Uses the binary file (dataset) to train a neural network in an .h5 file to be used in making predictions
 
 
-dataDict = pickle.load(open('/Users/tahashahid/Rough-Neural-Network/dataset.pickle', 'rb'))
+dataDict = pickle.load(open('/path/to/the/binary-file', 'rb'))
 data = np.array(dataDict['data'], dtype=np.float32)
 labels = np.array(dataDict['labels'], dtype=np.int32)
 

@@ -5,7 +5,7 @@ import cv2 as cv
 
 # Takes images from dataset folder, uses mediapipe to extract the coordinates of landmarks on the hands in the image, and stores the coordinates in a binary file to be used in training the model.
 
-DATA_DIR = '/Users/tahashahid/Rough-Neural-Network/dataset'
+DATA_DIR = '/path/to/the/dataset'
 
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.3)
