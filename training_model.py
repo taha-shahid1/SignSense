@@ -7,7 +7,7 @@ import numpy as np
 
 # Uses the binary file (dataset) to train a neural network in an .h5 file to be used in making predictions
 
-
+NUMBER_OF_LETTERS = ''
 dataDict = pickle.load(open('/path/to/the/binary-file', 'rb'))
 data = np.array(dataDict['data'], dtype=np.float32)
 labels = np.array(dataDict['labels'], dtype=np.int32)
@@ -23,7 +23,7 @@ model = Sequential([
     Dropout(0.2),                                        # During training, dropout randomly sets a fraction of the neurons (0.20 of neurons here) in a layer to zero at each training step which forces the model to rely on different combinations of neurons and reduces its reliance on specific neurons
     Dense(32, activation='relu'),                        # Hidden layer with 32 neurons (where the processing happens)
     Dropout(0.2),
-    Dense(3, activation='softmax')                       # Output layer, softmax means the outputs will be in the form of probabilities of which label the landmarks should belong to
+    Dense(NUMBER_OF_LETTERS, activation='softmax')                       # Output layer, softmax means the outputs will be in the form of probabilities of which label the landmarks should belong to
 
 ])
 
