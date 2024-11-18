@@ -56,4 +56,4 @@ loss, accuracy = model.evaluate(dataTest, labelsTest)
 print(f"\nTest Loss: {loss:.4f}")
 print(f"Test Accuracy: {accuracy * 100:.2f}%")
 
-model.save('RoughNeuralNetwork.h5')
+model.save('SignLanguageNeuralNetwork.h5')
