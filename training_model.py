@@ -7,7 +7,7 @@ import numpy as np
 
 # Uses the binary file (dataset) to train a neural network in an .h5 file to be used in making predictions
 
-NUMBER_OF_LETTERS = ''
+NUMBER_OF_LETTERS = ''             # Should be an integer, this is a placeholder
 dataDict = pickle.load(open('/path/to/the/binary-file', 'rb'))
 data = np.array(dataDict['data'], dtype=np.float32)
 labels = np.array(dataDict['labels'], dtype=np.int32)
