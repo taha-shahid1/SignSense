@@ -3,20 +3,35 @@ import numpy as np
 import cv2
 from tensorflow.keras.models import load_model
 from collections import Counter
-characters = []
+characters = [0 for x in range(28)]
+
+label_map = {
+    0: 'A',  1: 'B',  2: 'C',  3: 'D',  4: 'E', 
+    5: 'F',  6: 'G',  7: 'H',  8: 'I',  9: 'J', 
+    10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 
+    15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 
+    20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 
+    25: 'Z', 26: 'SPACE', 27: 'DELETE', 28: 'NOTHING'
+}
 
 
-def selectCharacter(predicted_character):
-    if predicted_character != 'NOTHING':
-        characters.append(predicted_character)
+def selectCharacter(predicted_class):
+    global characters
+    threshold = 10  # Minimum count for a character to be considered "stable"
+    
+    if predicted_class != 28:  # If the prediction is not 'NOTHING'
+        characters[predicted_class] += 1
     else:
-        if characters:
-            # Count the frequency of each element
-            count = Counter(characters)
-            # Get the element with the maximum frequency
-            most_common_value, _ = count.most_common(1)[0]
-            print(most_common_value)
-            characters.clear()
+        # Only process if we have accumulated enough predictions
+        max_count = max(characters)
+        if max_count >= threshold:
+            max_class = characters.index(max_count)
+            predicted_character = label_map.get(max_class, '?')  # '?' if class not in dictionary
+            print(predicted_character)
+            
+            # Reset for the next round
+            characters = [0 for _ in range(28)]
+
 
 
 
@@ -30,14 +45,6 @@ hands = mpHands.Hands(static_image_mode=False, max_num_hands=1, min_detection_co
 cap = cv2.VideoCapture(0)
 
 while cap.isOpened():
-    label_map = {
-    0: 'A',  1: 'B',  2: 'C',  3: 'D',  4: 'E', 
-    5: 'F',  6: 'G',  7: 'H',  8: 'I',  9: 'J', 
-    10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 
-    15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 
-    20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 
-    25: 'Z', 26: 'SPACE', 27: 'DELETE', 28: 'NOTHING'
-}
 
     ret, frame = cap.read()
     if not ret:
@@ -91,7 +98,7 @@ while cap.isOpened():
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
                 cv2.putText(frame, str(i), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
             
-            selectCharacter(predicted_character)
+            selectCharacter(predicted_class)
     else:
         predicted_character = 'NOTHING'
         cv2.putText(frame, 
@@ -101,7 +108,7 @@ while cap.isOpened():
                    1, 
                    (0, 0, 255),  # Red color for "NOTHING"
                    2)
-        selectCharacter(predicted_character)
+        selectCharacter(28)
 
     
     cv2.imshow("Video Feed", frame)
