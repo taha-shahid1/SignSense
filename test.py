@@ -10,9 +10,31 @@ model = load_model('SignLanguageNeuralNetwork.h5')
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.3)
 
+# Store the previously used characters in a frequency list
+last_characters = [0] * 28
+
 # Dictionary that maps predicted labels to corresponding sign
 label_to_letter = {i: chr(ord('A') + i) for i in range(26)}  # 0->'a', 1->'b', ..., 25->'z'
-# Still need to manually add the remaining non-letter signs
+label_to_letter[26] = "SPACE"
+label_to_letter[27] = "DELETE"
+label_to_letter[28] = "NOTHING"
+
+# Function that takes in the last frame's detection and returns a character if the nothing has been met
+def selectCharacter(predicted_class):
+    global last_characters
+    threshold = 10 # Don't return a character if the minimum has not been reached
+    
+    # If the detected sign was a regular letter, update the frequency table
+    if predicted_class != 28: # NOTHING
+        last_characters[predicted_class] += 1
+        return None
+    
+    # If the nothing character is sent and the threshold is met, print and return the most likely letter
+    max_count = max(last_characters)
+    if max_count >= threshold:
+        max_class = last_characters.index(max_count)
+        last_characters = [0] * 28
+        return label_to_letter.get(max_class, "?") # '?' if not found, shouldn't happen    
 
 # Function that takes in hand landmarks from MediaPipe containing 3D coordinates of points on a captured hand
 # Returns: dataBuffer (NumPy array), ready for the model to predict
@@ -59,6 +81,8 @@ while cap.isOpened():
     imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(imgRGB)
 
+    letter = None
+
     if results.multi_hand_landmarks:
         for landmarks in results.multi_hand_landmarks:
             # Get the model's predictions
@@ -80,8 +104,26 @@ while cap.isOpened():
                 x, y = int(landmark.x * w), int(landmark.y * h)
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
                 cv2.putText(frame, str(i), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
+            
+            letter = selectCharacter(next((k for k, v in label_to_letter.items() if v == letter), None))
+    else: # If no landmarks were created
+        letter, confidence = "NOTHING", 1
+        
+        # Display the model's predictions
+        cv2.putText(frame, 
+                    f"Class: {letter} Conf: {confidence:.2f}", 
+                    (10, 30), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 
+                    1, 
+                    (0, 255, 0), 
+                    2)
+        letter = selectCharacter(28)
 
-    
+    # Print the letter if one is returned
+    if letter:
+        print(letter)
+        letter = None
+        
     cv2.imshow("Video Feed", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
