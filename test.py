@@ -2,6 +2,7 @@ import mediapipe as mp
 import numpy as np
 import cv2
 from tensorflow.keras.models import load_model
+from updated_main import intake, formulate_sentence, text_to_speech, refine_sentence_with_grammar
 
 # Load the model
 model = load_model('SignLanguageNeuralNetwork.h5')
@@ -72,6 +73,9 @@ def predict_gesture(dataBuffer):
 streamURL = "stream url with ip address and host (8888)"
 cap = cv2.VideoCapture(streamURL)
 
+workingString = ""
+wordList = []
+recent_predictions = []
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -88,7 +92,20 @@ while cap.isOpened():
             # Get the model's predictions
             dataBuffer = process_landmarks(landmarks)
             letter, confidence = predict_gesture(dataBuffer)                     
-            
+            if letter:
+                recent_predictions.append(letter)
+                 if len(recent_predictions) > 3:
+                    recent_predictions.pop(0)
+                print("Recent Predictions:", recent_predictions)  # Debugging
+                if recent_predictions == ["SPACE", "SPACE", "NOTHING"]:
+                    if wordList:
+                        sentence = formulate_sentence(wordList, use_grammar_check=True)
+                        print("Output Sentence:", sentence)
+                        text_to_speech(sentence)
+                        wordList.clear()
+
+                if letter != "NOTHING":
+                    workingString, wordList = intake(letter, workingString, wordList, outputSentence=False)
             # Display the model's predictions
             cv2.putText(frame, 
                        f"Class: {letter} Conf: {confidence:.2f}", 
@@ -119,10 +136,6 @@ while cap.isOpened():
                     2)
         letter = selectCharacter(28)
 
-    # Print the letter if one is returned
-    if letter:
-        print(letter)
-        letter = None
         
     cv2.imshow("Video Feed", frame)
 
