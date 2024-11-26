@@ -69,8 +69,8 @@ def predict_gesture(dataBuffer):
     confidence = predictions[0][predictedLabel]
     return letter, confidence
 
-# Start the video capture locally, change for raspberry pi
-cap = cv2.VideoCapture(0)
+streamURL = "stream url with ip address and host (8888)"
+cap = cv2.VideoCapture(streamURL)
 
 
 while cap.isOpened():
