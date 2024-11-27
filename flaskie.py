@@ -6,10 +6,6 @@ import cv2
 
 # start the server and tts engine
 app = Flask(__name__)
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)
-engine.setProperty('volume', 1.0)
-tts_lock = threading.Lock()
 
 # configure and start the camera
 picam = PIcamera2()
@@ -40,23 +36,24 @@ def generate_video_feed():
 def video_feed():
     return Response(generate_video_feed(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# locally (on the pi), say something
+def tts(text):
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 150)
+    engine.setProperty('volume', 1.0)
+    engine.say(text)
+    engine.runAndWait()
+
 # tts route POST route
 @app.route('/say', methods=['POST'])
 def say():
-    data = response.json
+    data = request.json
     # validate response
     if not data or 'text' not in data:
         return jsonify({"error": "Invalid request, no 'text' field"}), 400
     
     text = data["text"] # get the text string
-    
-    # run tts in seperate thread
-    def tts_task():
-        with tts_lock:
-            engine.say(text)
-            engine.runAndWait()
-    threading.Thread(target=tts_task).start()
-    
+    threading.Thread(target=tts, args=(text,)).start()
     return jsonify({"message": "text being spoken..."}), 200
 
 if __name__ == "__main__":
