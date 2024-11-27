@@ -1,4 +1,4 @@
-import pyttsx3
+import requests
 import nltk
 from nltk.tokenize import word_tokenize
 import language_tool_python
@@ -8,12 +8,14 @@ import time
 nltk.download('punkt')
 
 def text_to_speech(text):
-    """Converts the input text to speech."""
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 150)  # Speed of speech
-    engine.setProperty('volume', 1.0)  # Volume level (0.0 to 1.0)
-    engine.say(text)
-    engine.runAndWait()
+    """Sends the text to the raspberry pi to speak"""
+    try:
+        url = "http:ip:8888/say"
+        data = {"text": text}
+        response = requests.post(url, json=data)
+        print(f"Sent! Status: {response.status_code}, Response: {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"An error occured while sending the request {e}")
 
 def read_recognized_letters():
     workingString = ""
