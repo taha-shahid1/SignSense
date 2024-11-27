@@ -1,7 +1,8 @@
-from Flask import Flask, Response, request, jsonify
-from picamera2 import PIcamera2, MappedArray
+from flask import Flask, Response, request, jsonify
+from picamera2 import Picamera2, MappedArray
 import pyttsx3
 import threading
+import cv2
 
 # start the server and tts engine
 app = Flask(__name__)
