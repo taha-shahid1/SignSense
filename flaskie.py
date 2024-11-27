@@ -1,55 +1,62 @@
-from picamera2 import Picamera2
-import cv2
-from flask import Flask, Response, render_template
+from Flask import Flask, Response, request, jsonify
+from picamera2 import PIcamera2, MappedArray
+import pyttsx3
 import threading
 
-# Initialize Flask app
+# start the server and tts engine
 app = Flask(__name__)
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)
+engine.setProperty('volume', 1.0)
+tts_lock = threading.Lock()
 
-# Define resolution
-RESOLUTION = (640, 480)
+# configure and start the camera
+picam = PIcamera2()
+camera_config = picam.create_video_configuration(
+    main={"size": (640, 480)},
+    lores={"size": (320, 240)},
+    controls={"FrameRate": 15},
+    buffer_count=4
+)
+picam.configure(camera_config)
+picam.start()
 
-# Initialize Picamera2
-picam2 = Picamera2()
-camera_config = picam2.create_preview_configuration(main={"size": RESOLUTION, "format": "RGB888"})
-picam2.framerate = 10
-picam2.configure(camera_config)
-picam2.start()
-
-# Frame variable to store the latest frame
-frame = None
-
-# Capture frames in a separate thread
-def capture_frames():
-    global frame
+# self explanatory
+def generate_video_feed():
     while True:
-        frame = picam2.capture_array()
+        with MappedArray(picam, "lores") as m:
+            frame = m.array # get frame as NumPy array
+        
+        # encode frame as JPEG
+        _, jpeg = cv2.imencode(".jpg", frame)
+        
+        # yield encoded frame as needed
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
 
-# Flask route to serve video feed
+# video feed GET route
 @app.route('/video_feed')
 def video_feed():
-    def generate():
-        global frame
-        while True:
-            if frame is not None:
-                # Encode frame as JPEG
-                ret, buffer = cv2.imencode('.jpg', frame)
-                if not ret:
-                    continue
-                # Yield buffer as bytes
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_video_feed(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-# Start the Flask app in a separate thread
-def start_server():
-    app.run(host='0.0.0.0', port=8888, debug=True, use_reloader=False)
+# tts route POST route
+@app.route('/say', methods=['POST'])
+def say():
+    data = response.json
+    # validate response
+    if not data or 'text' not in data:
+        return jsonify({"error": "Invalid request, no 'text' field"}), 400
+    
+    text = data["text"] # get the text string
+    
+    # run tts in seperate thread
+    def tts_task():
+        with tts_lock:
+            engine.say(text)
+            engine.runAndWait()
+    threading.Thread(target=tts_task).start()
+    
+    return jsonify({"message": "text being spoken..."}), 200
 
-if __name__ == '__main__':
-    # Start the capture thread
-    capture_thread = threading.Thread(target=capture_frames)
-    capture_thread.daemon = True
-    capture_thread.start()
-
-    # Start the Flask server
-    start_server()
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8888)
