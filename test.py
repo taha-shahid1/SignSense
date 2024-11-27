@@ -70,14 +70,18 @@ def predict_gesture(dataBuffer):
     confidence = predictions[0][predictedLabel]
     return letter, confidence
 
-streamURL = "stream url with ip address and host (8888)"
+streamURL = "http://172.20.10.2:8888/video_feed"
 cap = cv2.VideoCapture(streamURL)
 
 workingString = ""
 wordList = []
 recent_predictions = []
+count = 0
 
 while cap.isOpened():
+    count += 1
+    if count%2:
+        continue
     ret, frame = cap.read()
     if not ret:
         break
@@ -92,20 +96,6 @@ while cap.isOpened():
             # Get the model's predictions
             dataBuffer = process_landmarks(landmarks)
             letter, confidence = predict_gesture(dataBuffer)                     
-            if letter:
-                recent_predictions.append(letter)
-                 if len(recent_predictions) > 3:
-                    recent_predictions.pop(0)
-                print("Recent Predictions:", recent_predictions)  # Debugging
-                if recent_predictions == ["SPACE", "SPACE", "NOTHING"]:
-                    if wordList:
-                        sentence = formulate_sentence(wordList, use_grammar_check=True)
-                        print("Output Sentence:", sentence)
-                        text_to_speech(sentence)
-                        wordList.clear()
-
-                if letter != "NOTHING":
-                    workingString, wordList = intake(letter, workingString, wordList, outputSentence=False)
             # Display the model's predictions
             cv2.putText(frame, 
                        f"Class: {letter} Conf: {confidence:.2f}", 
@@ -115,12 +105,7 @@ while cap.isOpened():
                        (0, 255, 0), 
                        2)
             
-            # Draw the landmarks
-            for i, landmark in enumerate(landmarks.landmark):
-                h, w, _ = frame.shape
-                x, y = int(landmark.x * w), int(landmark.y * h)
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
-                cv2.putText(frame, str(i), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 0), 1)
+            
             
             letter = selectCharacter(next((k for k, v in label_to_letter.items() if v == letter), None))
     else: # If no landmarks were created
@@ -135,6 +120,20 @@ while cap.isOpened():
                     (0, 255, 0), 
                     2)
         letter = selectCharacter(28)
+    
+    if letter:
+            recent_predictions.append(letter)
+            if len(recent_predictions) > 2:
+                recent_predictions.pop(0)
+            print("Recent Predictions:", recent_predictions)  # Debugging
+            if recent_predictions == ["SPACE", "SPACE"]:
+                if wordList:
+                    sentence = formulate_sentence(wordList, use_grammar_check=True)
+                    print("Output Sentence:", sentence)
+                    text_to_speech(sentence)
+                    wordList.clear()
+            if letter != "NOTHING":
+                workingString, wordList = intake(letter, workingString, wordList, outputSentence=False)
 
         
     cv2.imshow("Video Feed", frame)
