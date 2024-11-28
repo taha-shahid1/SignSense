@@ -8,7 +8,7 @@ import cv2
 app = Flask(__name__)
 
 # configure and start the camera
-picam = PIcamera2()
+picam = Picamera2()
 camera_config = picam.create_video_configuration(
     main={"size": (640, 480)},
     lores={"size": (320, 240)},
