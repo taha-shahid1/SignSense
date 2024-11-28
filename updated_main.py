@@ -16,23 +16,7 @@ def text_to_speech(text):
         print(f"Sent! Status: {response.status_code}, Response: {response.text}")
     except requests.exceptions.RequestException as e:
         print(f"An error occured while sending the request {e}")
-
-def read_recognized_letters():
-    workingString = ""
-    wordList = []
-    while True:
-        try:
-            with open("recognized_letters.txt", "r") as f:
-                lines = f.readlines()
-            for line in lines:
-                character = line.strip()  
-                if character:
-                    workingString, wordList = intake(character, workingString, wordList)
-            with open("recognized_letters.txt", "w") as f:
-                pass
-        except FileNotFoundError:
-            pass
-        time.sleep(0.1)  
+  
 
 def refine_sentence_with_grammar(sentence):
     """Uses LanguageTool for grammar correction."""
